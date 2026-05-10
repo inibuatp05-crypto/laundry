@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartLaundry-Jabrix | Point of Sales</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        laundry: {
+                            light: '#f0f9ff',
+                            accent: '#0284c7',
+                            dark: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- SheetJS Library -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js">
+    </script>
+
+    <style>
+        :root {
+            --toast-bg: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+        }
+        .toast-enter {
+            animation: slideInRight 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+        }
+        .toast-exit {
+            animation: slideOutRight 0.35s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
+        }
+
+        /* Row highlight */
+        @keyframes rowHighlight {
+            0% {
+                background-color: #dbeafe;
+            }
+            100% {
+                background-color: transparent;
+            }
+        }
+        .row-new {
+            animation: rowHighlight 1.5s ease-out;
+        }
+
+        /* Pulse for summary */
+        @keyframes subtlePulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
+        }
+        .summary-update {
+            animation: subtlePulse 0.5s ease-in-out;
+        }
+
+        /* Sticky table header */
+        .table-container thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #1e40af;
+        }
+
+        /* Print-friendly */
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .table-container {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            .table-container thead th {
+                position: static;
+                background: #1e40af !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-100 to-blue-50">
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="bg-gradient-to-r from-laundry-dark via-brand-700 to-laundry-accent text-white shadow-xl no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white/20 backdrop-blur-sm rounded-2xl p-2.5 sm:p-3 shadow-inner">
+                        <span class="text-2xl sm:text-3xl">🧺</span>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight leading-tight">
+                            SmartLaundry<span class="text-cyan-300">-Jabrix</span>
+                        </h1>
+                        <p class="text-blue-100 text-xs sm:text-sm font-medium mt-0.5">
+                            Point of Sales · Kasir Digital
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 sm:px-4 sm:py-2.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span id="headerDate" class="text-white font-semibold text-sm sm:text-base"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 space-y-5 sm:space-y-6">
+
+        <!-- ==================== FORM INPUT CARD ==================== -->
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden no-print"
+        id="formCard">
+        <div class="bg-gradient-to-r from-brand-50 to-blue-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-brand-100">
+            <h2 class="text-base sm:text-lg font-bold text-brand-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Input Transaksi Baru
+            </h2>
+        </div>
+        <div class="p-4 sm:p-6">
+            <form id="transactionForm" class="space-y-4" autocomplete="off">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                    <!-- Tanggal -->
+                    <div class="lg:col-span-1">
+                        <label for="tanggal" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                            📅 Tanggal
+                        </label>
+                        <input type="date" id="tanggal" name="tanggal" required
+                        class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-all duration-200 bg-gray-50 hover:bg-white cursor-pointer shadow-sm"
+                        title="Tanggal transaksi">
+                    </div>
+
+                    <!-- Nama Customer -->
+                    <div class="lg:col-span-1">
+                        <label for="customer" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                            👤 Nama Customer
+                        </label>
+                        <input type="text" id="customer" name="customer"
+                        placeholder="Contoh: Budi / Hotel Mulia"
+                        required
+                        class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-all duration-200 placeholder-gray-400 shadow-sm"
+                        title="Nama pelanggan (ketik 'Hotel' untuk diskon otomatis)">
+                        <p id="hotelIndicator" class="text-xs text-amber-600 font-medium mt-1 hidden">
+                            🏨 Diskon Hotel Rp 1.000/Qty akan diterapkan!
+                        </p>
+                    </div>
+
+                    <!-- Layanan -->
+                    <div class="lg:col-span-1">
+                        <label for="layanan" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                            🏷️ Layanan
+                        </label>
+                        <select id="layanan" name="layanan" required
+                        class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-all duration-200 bg-gray-50 hover:bg-white cursor-pointer shadow-sm"
+                        title="Pilih jenis layanan laundry">
+                        <option value="">-- Pilih Layanan --</option>
+                    </select>
+                </div>
+
+                <!-- Qty -->
+                <div class="lg:col-span-1">
+                    <label for="qty" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                        🔢 Quantity
+                    </label>
+                    <input type="number" id="qty" name="qty"
+                    placeholder="Jumlah"
+                    required min="1" step="1"
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-all duration-200 shadow-sm"
+                    title="Jumlah (Kg/Set/Pcs)">
+                </div>
+
+                <!-- Metode -->
+                <div class="lg:col-span-1">
+                    <label for="metode" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                        💳 Metode
+                    </label>
+                    <select id="metode" name="metode" required
+                    class="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-400 focus:border-brand-400 transition-all duration-200 bg-gray-50 hover:bg-white cursor-pointer shadow-sm"
+                    title="Metode pembayaran">
+                    <option value="Kasir">💰 Kasir (Tunai)</option>
+                    <option value="QRIS">📱 QRIS (Digital)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Info Harga & Satuan -->
+        <div id="priceInfo" class="flex flex-wrap items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-gray-50 rounded-xl border border-gray-200 hidden">
+            <span class="text-xs sm:text-sm text-gray-600 font-medium">ℹ️ Detail:</span>
+            <span id="infoSatuan" class="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-xs sm:text-sm font-semibold text-brand-700 border border-brand-200 shadow-sm">
+                Satuan: <strong id="satuanText">-</strong>
+            </span>
+            <span id="infoHarga" class="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-xs sm:text-sm font-semibold text-emerald-700 border border-emerald-200 shadow-sm">
+                Harga: <strong id="hargaText">-</strong>
+            </span>
+            <span id="infoTotalPreview" class="inline-flex items-center gap-1 px-3 py-1 bg-white rounded-full text-xs sm:text-sm font-bold text-brand-800 border border-brand-300 shadow-sm">
+                Estimasi: <strong id="totalPreviewText">-</strong>
+            </span>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" id="btnSubmit"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 bg-gradient-to-r from-brand-600 to-brand-700 text-white font-semibold rounded-xl hover:from-brand-700 hover:to-brand-800 focus:ring-4 focus:ring-brand-300 transition-all duration-200 shadow-md hover:shadow-lg active:scale-[0.98] text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Transaksi
+        </button>
+        <button type="button" id="btnResetForm"
+        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-white text-gray-600 font-medium rounded-xl border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-4 focus:ring-gray-200 transition-all duration-200 active:scale-[0.98] text-sm shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Reset
+    </button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- ==================== TABLE CARD ==================== -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden" id="tableCard">
+    <div class="bg-gradient-to-r from-brand-700 via-brand-800 to-laundry-dark px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-cyan-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            Daftar Transaksi
+        </h2>
+        <span id="rowCount" class="text-sm text-blue-200 font-medium bg-white/10 px-3 py-1 rounded-full">
+            0 Transaksi
+        </span>
+    </div>
+
+    <!-- Table Wrapper -->
+    <div class="table-container overflow-x-auto overflow-y-auto max-h-[500px] sm:max-h-[600px]">
+        <table class="w-full min-w-[900px] text-sm" id="transactionTable">
+            <thead>
+                <tr class="text-white text-xs sm:text-sm">
+                    <th class="px-3 py-3 text-center font-semibold w-12">No</th>
+                    <th class="px-3 py-3 text-left font-semibold w-24">Tgl</th>
+                    <th class="px-3 py-3 text-left font-semibold min-w-[140px]">Customer</th>
+                    <th class="px-3 py-3 text-center font-semibold w-20">Metode</th>
+                    <th class="px-3 py-3 text-left font-semibold min-w-[130px]">Ket (Layanan)</th>
+                    <th class="px-3 py-3 text-center font-semibold w-16">Qty</th>
+                    <th class="px-3 py-3 text-center font-semibold w-16">Satuan</th>
+                    <th class="px-3 py-3 text-right font-semibold w-28">Harga</th>
+                    <th class="px-3 py-3 text-right font-semibold w-28">Diskon</th>
+                    <th class="px-3 py-3 text-right font-semibold w-28">Total</th>
+                    <th class="px-3 py-3 text-center font-semibold w-16 no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Empty State -->
+                <tr id="emptyState">
+                    <td colspan="11" class="px-4 py-16 text-center">
+                        <div class="flex flex-col items-center justify-center gap-3">
+                            <span class="text-5xl">📋</span>
+                            <p class="text-gray-500 font-medium text-sm sm:text-base">
+                                Belum ada transaksi
+                            </p>
+                            <p class="text-gray-400 text-xs sm:text-sm">
+                                Silakan tambahkan data melalui form di atas
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Table Footer Summary -->
+    <div class="border-t-2 border-brand-100 bg-gradient-to-r from-gray-50 to-slate-50 px-4 sm:px-6 py-3">
+        <div class="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+            <span class="text-gray-600 font-medium">
+                Total Transaksi: <strong id="footerCount" class="text-brand-700">0</strong> item
+            </span>
+            <span class="text-gray-600 font-medium">
+                Grand Total: <strong id="footerGrandTotal" class="text-brand-700 text-base">Rp 0</strong>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SUMMARY CARDS ==================== -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5" id="summarySection">
+    <!-- Total Pendapatan Bruto -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl"
+    id="cardBruto">
+    <div class="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-[80px] -mr-4 -mt-4 opacity-60"></div>
+    <div class="relative z-10">
+        <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+            💰 Total Pendapatan Bruto
+        </p>
+        <p id="totalBruto" class="text-2xl sm:text-3xl font-extrabold text-brand-700 break-all">
+            Rp 0
+        </p>
+        <p class="text-xs text-gray-400 mt-1">Sebelum pembagian keuntungan</p>
+    </div>
+</div>
+
+<!-- Pembagian Keuntungan 12% -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl"
+id="cardKeuntungan">
+<div class="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-[80px] -mr-4 -mt-4 opacity-60"></div>
+<div class="relative z-10">
+    <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+        📊 Pembagian Keuntungan <span class="text-emerald-600 font-bold">(12%)</span>
+    </p>
+    <p id="totalKeuntungan" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 break-all">
+        Rp 0
+    </p>
+    <p class="text-xs text-gray-400 mt-1">12% dari total pendapatan</p>
+</div>
+</div>
+
+<!-- Sisa Pembayaran ke SmartLaundry -->
+<div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 sm:p-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl"
+id="cardSisa">
+<div class="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-[80px] -mr-4 -mt-4 opacity-60"></div>
+<div class="relative z-10">
+    <p class="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+        🏢 Sisa Pembayaran SmartLaundry <span class="text-amber-600 font-bold">(88%)</span>
+    </p>
+    <p id="totalSisa" class="text-2xl sm:text-3xl font-extrabold text-amber-600 break-all">
+        Rp 0
+    </p>
+    <p class="text-xs text-gray-400 mt-1">88% untuk SmartLaundry-Jabrix</p>
+</div>
+</div>
+</div>
+
+<!-- ==================== ACTION BUTTONS ==================== -->
+<div class="flex flex-col sm:flex-row gap-3 sm:gap-4 no-print" id="actionBar">
+    <button type="button" id="btnDownloadXLSX"
+    class="flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold rounded-xl hover:from-emerald-600 hover:to-emerald-700 focus:ring-4 focus:ring-emerald-300 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-[0.98] text-sm">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+    📥 Download Laporan XLSX
+</button>
+<button type="button" id="btnClearAll"
+class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-white text-red-600 font-semibold rounded-xl border-2 border-red-200 hover:bg-red-50 hover:border-red-400 focus:ring-4 focus:ring-red-200 transition-all duration-200 active:scale-[0.98] text-sm shadow-sm">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+</svg>
+Hapus Semua
+</button>
+</div>
+
+</main>
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="text-center py-4 sm:py-6 text-xs sm:text-sm text-gray-400 font-medium no-print">
+    © <span id="footerYear"></span> SmartLaundry-Jabrix · Point of Sales System · Dibuat dengan ❤️
+</footer>
+
+<!-- ==================== TOAST NOTIFICATION ==================== -->
+<div id="toastContainer" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+style="max-width: 380px; width: calc(100% - 32px);">
+</div>
+
+<!-- ==================== DELETE CONFIRMATION MODAL ==================== -->
+<div id="confirmModal"
+class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm hidden transition-opacity duration-300"
+aria-hidden="true">
+<div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-sm w-full mx-4 transform transition-all duration-300 scale-95"
+id="confirmModalInner">
+<div class="text-center">
+    <span class="text-5xl mb-3 block">⚠️</span>
+    <h3 class="text-lg font-bold text-gray-800 mb-2">Konfirmasi Hapus</h3>
+    <p class="text-sm text-gray-600 mb-6" id="confirmModalMessage">
+        Apakah Anda yakin ingin menghapus transaksi ini?
+    </p>
+    <div class="flex gap-3 justify-center">
+        <button type="button" id="btnConfirmCancel"
+        class="px-5 py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all duration-200 text-sm">
+        Batal
+    </button>
+    <button type="button" id="btnConfirmDelete"
+    class="px-5 py-2.5 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 transition-all duration-200 text-sm shadow-md">
+    Hapus
+</button>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+    (function() {
+        // ==================== CONSTANTS & CONFIGURATION ====================
+        const STORAGE_KEY = 'smartlaundry_jabrix_transactions';
+        const DISKON_PER_QTY_HOTEL = 1000;
+        const PERSENTASE_KEUNTUNGAN = 12; // 12%
+
+        // Daftar harga layanan
+        const SERVICE_DATA = [
+            { name: 'Kiloan', price: 7000, unit: 'Kg' },
+            { name: 'Express', price: 9000, unit: 'Kg' },
+            { name: 'Setrika', price: 6000, unit: 'Kg' },
+            { name: 'Sprei Single', price: 12000, unit: 'Set' },
+            { name: 'Sprei Set Double', price: 15000, unit: 'Set' },
+            { name: 'BC (Bed Cover) Extra', price: 25000, unit: 'Pcs' },
+            { name: 'BC Besar', price: 20000, unit: 'Pcs' },
+            { name: 'BC Sedang', price: 18000, unit: 'Pcs' },
+            { name: 'Selimut Tebal', price: 20000, unit: 'Pcs' },
+            { name: 'Selimut Kecil', price: 15000, unit: 'Pcs' },
+            { name: 'Mukena', price: 8000, unit: 'Pcs' },
+            { name: 'Sejadah', price: 8000, unit: 'Pcs' },
+        ];
+
+        // ==================== STATE MANAGEMENT ====================
+        let transactions = [];
+        let deleteTargetId = null;
+
+        // ==================== DOM REFERENCES ====================
+        const $ = (selector) => document.querySelector(selector);
+        const $$ = (selector) => document.querySelectorAll(selector);
+
+        const form = $('#transactionForm');
+        const inputTanggal = $('#tanggal');
+        const inputCustomer = $('#customer');
+        const selectLayanan = $('#layanan');
+        const inputQty = $('#qty');
+        const selectMetode = $('#metode');
+        const priceInfo = $('#priceInfo');
+        const infoSatuan = $('#satuanText');
+        const infoHarga = $('#hargaText');
+        const infoTotalPreview = $('#totalPreviewText');
+        const hotelIndicator = $('#hotelIndicator');
+        const tableBody = $('#tableBody');
+        const emptyState = $('#emptyState');
+        const rowCount = $('#rowCount');
+        const footerCount = $('#footerCount');
+        const footerGrandTotal = $('#footerGrandTotal');
+        const totalBruto = $('#totalBruto');
+        const totalKeuntungan = $('#totalKeuntungan');
+        const totalSisa = $('#totalSisa');
+        const headerDate = $('#headerDate');
+        const toastContainer = $('#toastContainer');
+        const confirmModal = $('#confirmModal');
+        const confirmModalInner = $('#confirmModalInner');
+        const confirmModalMessage = $('#confirmModalMessage');
+        const btnConfirmCancel = $('#btnConfirmCancel');
+        const btnConfirmDelete = $('#btnConfirmDelete');
+        const btnDownloadXLSX = $('#btnDownloadXLSX');
+        const btnClearAll = $('#btnClearAll');
+        const btnResetForm = $('#btnResetForm');
+        const btnSubmit = $('#btnSubmit');
+        const footerYear = $('#footerYear');
+        const cardBruto = $('#cardBruto');
+        const cardKeuntungan = $('#cardKeuntungan');
+        const cardSisa = $('#cardSisa');
+
+        // ==================== UTILITY FUNCTIONS ====================
+        function formatRupiah(angka) {
+            return 'Rp ' + Math.round(angka).toLocaleString('id-ID');
+        }
+
+        function formatTanggal(dateString) {
+            if (!dateString) return '-';
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateString;
+        }
+
+        function getTodayDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+        }
+
+        function isHotelCustomer(name) {
+            return name && name.toLowerCase().includes('hotel');
+        }
+
+        function getServiceByName(name) {
+            return SERVICE_DATA.find(s => s.name === name);
+        }
+
+        // ==================== LOCAL STORAGE ====================
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+            } catch (e) {
+                showToast('⚠️ Gagal menyimpan ke Local Storage. Penyimpanan mungkin penuh.', 'warning');
+                console.warn('Local Storage save failed:', e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        transactions = parsed;
+                    } else {
+                        transactions = [];
+                    }
+                } else {
+                    transactions = [];
+                }
+            } catch (e) {
+                console.warn('Local Storage load failed, resetting data:', e);
+                transactions = [];
+                localStorage.removeItem(STORAGE_KEY);
+            }
+        }
+
+        // ==================== TOAST NOTIFICATION ====================
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-gray-800' :
+                type === 'warning' ? 'bg-amber-600' :
+                type === 'error' ? 'bg-red-600' : 'bg-gray-800';
+            const icon = type === 'success' ? '✅' :
+                type === 'warning' ? '⚠️' :
+                type === 'error' ? '❌' : 'ℹ️';
+
+            toast.className =
+                `pointer-events-auto ${bgColor} text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 text-sm font-medium toast-enter`;
+            toast.innerHTML = `<span class="text-lg flex-shrink-0">${icon}</span><span class="flex-1">${message}</span>`;
+            toastContainer.appendChild(toast);
+
+            // Auto remove after 3.5 seconds
+            const removeTimeout = setTimeout(() => {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                toast.addEventListener('animationend', () => {
+                    if (toast.parentNode) toast.remove();
+                }, { once: true });
+            }, 3500);
+
+            // Click to dismiss early
+            toast.addEventListener('click', () => {
+                clearTimeout(removeTimeout);
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                toast.addEventListener('animationend', () => {
+                    if (toast.parentNode) toast.remove();
+                }, { once: true });
+            });
+        }
+
+        // ==================== CONFIRMATION MODAL ====================
+        function showConfirmModal(message, onConfirm) {
+            confirmModalMessage.textContent = message;
+            confirmModal.classList.remove('hidden');
+            confirmModal.setAttribute('aria-hidden', 'false');
+            setTimeout(() => {
+                confirmModalInner.classList.remove('scale-95');
+                confirmModalInner.classList.add('scale-100');
+            }, 50);
+
+            const handleConfirm = () => {
+                hideConfirmModal();
+                if (typeof onConfirm === 'function') onConfirm();
+                cleanupListeners();
+            };
+
+            const handleCancel = () => {
+                hideConfirmModal();
+                cleanupListeners();
+            };
+
+            const handleKeydown = (e) => {
+                if (e.key === 'Escape') handleCancel();
+                if (e.key === 'Enter') handleConfirm();
+            };
+
+            const handleOutsideClick = (e) => {
+                if (e.target === confirmModal) handleCancel();
+            };
+
+            function cleanupListeners() {
+                btnConfirmDelete.removeEventListener('click', handleConfirm);
+                btnConfirmCancel.removeEventListener('click', handleCancel);
+                document.removeEventListener('keydown', handleKeydown);
+                confirmModal.removeEventListener('click', handleOutsideClick);
+            }
+
+            btnConfirmDelete.addEventListener('click', handleConfirm);
+            btnConfirmCancel.addEventListener('click', handleCancel);
+            document.addEventListener('keydown', handleKeydown);
+            confirmModal.addEventListener('click', handleOutsideClick);
+        }
+
+        function hideConfirmModal() {
+            confirmModalInner.classList.add('scale-95');
+            confirmModalInner.classList.remove('scale-100');
+            setTimeout(() => {
+                confirmModal.classList.add('hidden');
+                confirmModal.setAttribute('aria-hidden', 'true');
+                deleteTargetId = null;
+            }, 200);
+        }
+
+        // ==================== POPULATE LAYANAN DROPDOWN ====================
+        function populateLayananDropdown() {
+            selectLayanan.innerHTML = '<option value="">-- Pilih Layanan --</option>';
+            SERVICE_DATA.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service.name;
+                option.textContent = `${service.name} — ${formatRupiah(service.price)} /${service.unit}`;
+                option.dataset.price = service.price;
+                option.dataset.unit = service.unit;
+                selectLayanan.appendChild(option);
+            });
+        }
+
+        // ==================== UPDATE PRICE INFO ====================
+        function updatePriceInfo() {
+            const selectedService = selectLayanan.value;
+            const qty = parseInt(inputQty.value) || 0;
+            const customerName = inputCustomer.value.trim();
+
+            if (!selectedService || qty <= 0) {
+                priceInfo.classList.add('hidden');
+                hotelIndicator.classList.add('hidden');
+                return;
+            }
+
+            const service = getServiceByName(selectedService);
+            if (!service) {
+                priceInfo.classList.add('hidden');
+                hotelIndicator.classList.add('hidden');
+                return;
+            }
+
+            priceInfo.classList.remove('hidden');
+            infoSatuan.textContent = service.unit;
+            infoHarga.textContent = formatRupiah(service.price);
+
+            const isHotel = isHotelCustomer(customerName);
+            const diskonPerQty = isHotel ? DISKON_PER_QTY_HOTEL : 0;
+            const totalDiskon = diskonPerQty * qty;
+            const subtotal = service.price * qty;
+            const estimasiTotal = subtotal - totalDiskon;
+
+            infoTotalPreview.textContent = formatRupiah(estimasiTotal);
+
+            if (isHotel && customerName.length > 0) {
+                hotelIndicator.classList.remove('hidden');
+                hotelIndicator.textContent = `🏨 Diskon Hotel Rp ${DISKON_PER_QTY_HOTEL.toLocaleString('id-ID')}/Qty akan diterapkan! (Total diskon: ${formatRupiah(totalDiskon)})`;
+            } else {
+                hotelIndicator.classList.add('hidden');
+            }
+        }
+
+        // ==================== RENDER TABLE ====================
+        function renderTable() {
+            tableBody.innerHTML = '';
+
+            if (transactions.length === 0) {
+                tableBody.innerHTML = `
+                        <tr id="emptyState">
+                            <td colspan="11" class="px-4 py-16 text-center">
+                                <div class="flex flex-col items-center justify-center gap-3">
+                                    <span class="text-5xl">📋</span>
+                                    <p class="text-gray-500 font-medium text-sm sm:text-base">Belum ada transaksi</p>
+                                    <p class="text-gray-400 text-xs sm:text-sm">Silakan tambahkan data melalui form di atas</p>
+                                </div>
+                            </td>
+                        </tr>`;
+            } else {
+                transactions.forEach((trx, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className =
+                        `border-b border-gray-100 hover:bg-blue-50/60 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`;
+                    tr.setAttribute('data-id', trx.id);
+
+                    const metodeBadge = trx.metode === 'QRIS' ?
+                        '<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">📱 QRIS</span>' :
+                        '<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">💰 Kasir</span>';
+
+                    const diskonDisplay = trx.diskon > 0 ?
+                        `<span class="text-red-600 font-semibold">-${formatRupiah(trx.diskon)}</span>` :
+                        '<span class="text-gray-400">Rp 0</span>';
+
+                    tr.innerHTML = `
+                            <td class="px-3 py-2.5 text-center font-medium text-gray-700">${index + 1}</td>
+                            <td class="px-3 py-2.5 text-gray-700 font-medium">${formatTanggal(trx.tanggal)}</td>
+                            <td class="px-3 py-2.5 font-semibold text-gray-800">
+                                ${escapeHTML(trx.customer)}
+                                ${trx.isHotel ? ' <span class="text-amber-500 text-xs" title="Diskon Hotel">🏨</span>' : ''}
+                            </td>
+                            <td class="px-3 py-2.5 text-center">${metodeBadge}</td>
+                            <td class="px-3 py-2.5 text-gray-700">${escapeHTML(trx.layanan)}</td>
+                            <td class="px-3 py-2.5 text-center font-semibold text-gray-800">${trx.qty}</td>
+                            <td class="px-3 py-2.5 text-center text-gray-600">${trx.satuan}</td>
+                            <td class="px-3 py-2.5 text-right font-medium text-gray-700">${formatRupiah(trx.hargaSatuan)}</td>
+                            <td class="px-3 py-2.5 text-right">${diskonDisplay}</td>
+                            <td class="px-3 py-2.5 text-right font-bold text-brand-700">${formatRupiah(trx.total)}</td>
+                            <td class="px-3 py-2.5 text-center no-print">
+                                <button type="button"
+                                    class="btn-delete inline-flex items-center justify-center w-8 h-8 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 hover:text-red-700 transition-all duration-150 active:scale-90"
+                                    data-id="${trx.id}"
+                                    title="Hapus transaksi">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </td>`;
+                    tableBody.appendChild(tr);
+                });
+
+                // Attach delete event listeners
+                tableBody.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.getAttribute('data-id');
+                        const trx = transactions.find(t => t.id === id);
+                        if (trx) {
+                            deleteTargetId = id;
+                            showConfirmModal(
+                                `Hapus transaksi <strong>"${escapeHTML(trx.layanan)}"</strong> untuk customer <strong>"${escapeHTML(trx.customer)}"</strong>?`,
+                                () => {
+                                    deleteTransaction(deleteTargetId);
+                                }
+                            );
+                        }
+                    });
+                });
+            }
+
+            updateSummary();
+            updateCounts();
+        }
+
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function updateCounts() {
+            const count = transactions.length;
+            rowCount.textContent = `${count} Transaksi`;
+            footerCount.textContent = count;
+        }
+
+        function updateSummary() {
+            const grandTotal = transactions.reduce((sum, t) => sum + t.total, 0);
+            const keuntungan = grandTotal * (PERSENTASE_KEUNTUNGAN / 100);
+            const sisa = grandTotal - keuntungan;
+
+            footerGrandTotal.textContent = formatRupiah(grandTotal);
+            totalBruto.textContent = formatRupiah(grandTotal);
+            totalKeuntungan.textContent = formatRupiah(keuntungan);
+            totalSisa.textContent = formatRupiah(sisa);
+
+            // Brief pulse animation on summary cards
+            [cardBruto, cardKeuntungan, cardSisa].forEach(card => {
+                card.classList.add('summary-update');
+                setTimeout(() => card.classList.remove('summary-update'), 500);
+            });
+        }
+
+        // ==================== ADD TRANSACTION ====================
+        function addTransaction(data) {
+            const service = getServiceByName(data.layanan);
+            if (!service) return false;
+
+            const isHotel = isHotelCustomer(data.customer);
+            const diskonPerQty = isHotel ? DISKON_PER_QTY_HOTEL : 0;
+            const totalDiskon = diskonPerQty * data.qty;
+            const subtotal = service.price * data.qty;
+            const total = subtotal - totalDiskon;
+
+            const transaction = {
+                id: generateId(),
+                tanggal: data.tanggal,
+                customer: data.customer.trim(),
+                layanan: data.layanan,
+                qty: data.qty,
+                satuan: service.unit,
+                hargaSatuan: service.price,
+                diskon: totalDiskon,
+                total: total,
+                metode: data.metode,
+                isHotel: isHotel,
+                createdAt: new Date().toISOString(),
+            };
+
+            transactions.unshift(transaction); // Add to beginning for newest first
+            saveToLocalStorage();
+            renderTable();
+
+            // Highlight the new row
+            setTimeout(() => {
+                const newRow = tableBody.querySelector(`[data-id="${transaction.id}"]`);
+                if (newRow) {
+                    newRow.classList.add('row-new');
+                    setTimeout(() => newRow.classList.remove('row-new'), 1600);
+                }
+            }, 100);
+
+            showToast(`✅ Transaksi "${escapeHTML(data.layanan)}" untuk "${escapeHTML(data.customer)}" berhasil ditambahkan!`);
+            return true;
+        }
+
+        // ==================== DELETE TRANSACTION ====================
+        function deleteTransaction(id) {
+            const index = transactions.findIndex(t => t.id === id);
+            if (index === -1) return;
+
+            const deleted = transactions.splice(index, 1)[0];
+            saveToLocalStorage();
+            renderTable();
+            showToast(`🗑️ Transaksi "${escapeHTML(deleted.layanan)}" telah dihapus.`, 'warning');
+        }
+
+        function clearAllTransactions() {
+            if (transactions.length === 0) {
+                showToast('📋 Tidak ada transaksi untuk dihapus.', 'warning');
+                return;
+            }
+            showConfirmModal(
+                `⚠️ Anda akan menghapus <strong>SEMUA (${transactions.length}) transaksi</strong>. Tindakan ini tidak dapat dibatalkan!`,
+                () => {
+                    transactions = [];
+                    saveToLocalStorage();
+                    renderTable();
+                    showToast('🗑️ Semua transaksi telah dihapus.', 'error');
+                }
+            );
+        }
+
+        // ==================== RESET FORM ====================
+        function resetForm(keepDate = true) {
+            const currentDate = inputTanggal.value;
+            form.reset();
+            if (keepDate && currentDate) {
+                inputTanggal.value = currentDate;
+            } else {
+                inputTanggal.value = getTodayDate();
+            }
+            selectMetode.value = 'Kasir';
+            priceInfo.classList.add('hidden');
+            hotelIndicator.classList.add('hidden');
+            inputCustomer.focus();
+        }
+
+        // ==================== XLSX EXPORT ====================
+        function exportToXLSX() {
+            if (transactions.length === 0) {
+                showToast('📋 Tidak ada data untuk diekspor. Tambahkan transaksi terlebih dahulu.', 'warning');
+                return;
+            }
+
+            try {
+                // Build data array for XLSX
+                const rows = [];
+
+                // Title row
+                rows.push(['LAPORAN PENDAPATAN SMARTLAUNDRY-JABRIX']);
+                rows.push([`Tanggal Ekspor: ${formatTanggal(getTodayDate())}`]);
+                rows.push([`Total Transaksi: ${transactions.length} item`]);
+                rows.push([]); // Empty row
+
+                // Column headers
+                rows.push(['No', 'Tanggal', 'Customer', 'Metode', 'Keterangan (Layanan)', 'Qty', 'Satuan',
+                    'Harga Satuan (Rp)', 'Diskon (Rp)', 'Total (Rp)'
+                ]);
+
+                // Data rows
+                transactions.forEach((trx, index) => {
+                    rows.push([
+                        index + 1,
+                        formatTanggal(trx.tanggal),
+                        trx.customer,
+                        trx.metode,
+                        trx.layanan,
+                        trx.qty,
+                        trx.satuan,
+                        trx.hargaSatuan,
+                        trx.diskon,
+                        trx.total,
+                    ]);
+                });
+
+                // Summary rows
+                const grandTotal = transactions.reduce((sum, t) => sum + t.total, 0);
+                const keuntungan = grandTotal * (PERSENTASE_KEUNTUNGAN / 100);
+                const sisa = grandTotal - keuntungan;
+
+                rows.push([]);
+                rows.push(['', '', '', '', '', '', '', 'TOTAL PENDAPATAN BRUTO', '', grandTotal]);
+                rows.push(['', '', '', '', '', '', '', `PEMBAGIAN KEUNTUNGAN (${PERSENTASE_KEUNTUNGAN}%)`, '',
+                    keuntungan
+                ]);
+                rows.push(['', '', '', '', '', '', '', 'SISA PEMBAYARAN SMARTLAUNDRY (88%)', '', sisa]);
+
+                // Create worksheet
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+
+                // Set column widths
+                ws['!cols'] = [
+                    { wch: 5 }, // No
+                    { wch: 12 }, // Tanggal
+                    { wch: 28 }, // Customer
+                    { wch: 10 }, // Metode
+                    { wch: 24 }, // Keterangan
+                    { wch: 6 }, // Qty
+                    { wch: 8 }, // Satuan
+                    { wch: 18 }, // Harga Satuan
+                    { wch: 15 }, // Diskon
+                    { wch: 18 }, // Total
+                ];
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Laporan Pendapatan');
+
+                // Generate filename with date
+                const today = new Date();
+                const filename =
+                    `Laporan_SmartLaundry_Jabrix_${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}.xlsx`;
+
+                // Download
+                XLSX.writeFile(wb, filename);
+                showToast('✅ Laporan XLSX berhasil diunduh! File siap digunakan di Excel.', 'success');
+            } catch (e) {
+                console.error('Export failed:', e);
+                showToast('❌ Gagal mengekspor file. Silakan coba lagi.', 'error');
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        // Form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const tanggal = inputTanggal.value.trim();
+            const customer = inputCustomer.value.trim();
+            const layanan = selectLayanan.value;
+            const qty = parseInt(inputQty.value);
+            const metode = selectMetode.value;
+
+            // Validation
+            if (!tanggal) {
+                showToast('⚠️ Harap isi tanggal transaksi.', 'warning');
+                inputTanggal.focus();
+                return;
+            }
+            if (!customer) {
+                showToast('⚠️ Harap isi nama customer.', 'warning');
+                inputCustomer.focus();
+                return;
+            }
+            if (!layanan) {
+                showToast('⚠️ Harap pilih layanan.', 'warning');
+                selectLayanan.focus();
+                return;
+            }
+            if (!qty || qty <= 0) {
+                showToast('⚠️ Quantity harus minimal 1.', 'warning');
+                inputQty.focus();
+                return;
+            }
+            if (qty > 99999) {
+                showToast('⚠️ Quantity terlalu besar. Maksimal 99.999.', 'warning');
+                inputQty.focus();
+                return;
+            }
+
+            const success = addTransaction({
+                tanggal,
+                customer,
+                layanan,
+                qty,
+                metode,
+            });
+
+            if (success) {
+                resetForm(true);
+                // Scroll to table
+                document.getElementById('tableCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        // Real-time price info updates
+        selectLayanan.addEventListener('change', updatePriceInfo);
+        inputQty.addEventListener('input', updatePriceInfo);
+        inputCustomer.addEventListener('input', updatePriceInfo);
+
+        // Keyboard shortcut: Enter on Qty submits form
+        inputQty.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Customer name Enter also moves to next field
+        inputCustomer.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                selectLayanan.focus();
+            }
+        });
+
+        // Layanan Enter moves to Qty
+        selectLayanan.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                inputQty.focus();
+            }
+        });
+
+        // Download XLSX
+        btnDownloadXLSX.addEventListener('click', exportToXLSX);
+
+        // Clear all
+        btnClearAll.addEventListener('click', clearAllTransactions);
+
+        // Reset form
+        btnResetForm.addEventListener('click', function() {
+            resetForm(false);
+            showToast('🔄 Form telah direset.', 'warning');
+        });
+
+        // Modal cancel button
+        btnConfirmCancel.addEventListener('click', hideConfirmModal);
+
+        // Close modal on Escape key (global)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !confirmModal.classList.contains('hidden')) {
+                hideConfirmModal();
+            }
+        });
+
+        // ==================== INITIALIZATION ====================
+        function init() {
+            // Set footer year
+            footerYear.textContent = new Date().getFullYear();
+
+            // Set header date
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            headerDate.textContent = now.toLocaleDateString('id-ID', options);
+
+            // Set today's date as default
+            inputTanggal.value = getTodayDate();
+            inputTanggal.max = getTodayDate(); // Prevent future dates
+
+            // Populate layanan dropdown
+            populateLayananDropdown();
+
+            // Set default metode
+            selectMetode.value = 'Kasir';
+
+            // Load data from Local Storage
+            loadFromLocalStorage();
+
+            // Render table
+            renderTable();
+
+            // Focus on customer input
+            setTimeout(() => inputCustomer.focus(), 300);
+
+            console.log('🧺 SmartLaundry-Jabrix POS System initialized!');
+            console.log(`   📋 ${transactions.length} transaksi dimuat dari Local Storage.`);
+            console.log('   💡 Tip: Ketik "Hotel" di nama customer untuk diskon otomatis Rp 1.000/Qty.');
+            console.log('   ⌨️  Tekan Enter di field Qty untuk submit cepat.');
+        }
+
+        // Start the application
+        init();
+
+        // ==================== SERVICE WORKER REGISTRATION (Optional PWA) ====================
+        // Not implemented for simplicity; can be added for offline support.
+
+        console.log('%c🧺 SmartLaundry-Jabrix %cPOS System Ready %c✨',
+            'font-size: 16px; font-weight: bold; color: #1e40af;',
+            'font-size: 14px; color: #0284c7;',
+            'font-size: 14px;');
+        console.log('%cDibangun dengan HTML + Tailwind CSS + Vanilla JavaScript',
+            'color: #64748b; font-style: italic;');
+    })();
+</script>
+</body>
+</html>
