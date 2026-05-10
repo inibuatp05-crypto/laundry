@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMARTLAUNDRY-JABRIX | Sistem Kasir Laundry</title>
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">
+    </script>
+
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #e8f0fe;
+            --accent: #00b4d8;
+            --accent-dark: #0096b7;
+            --success: #0d9488;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --bg: #f0f4f8;
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-light: #f1f5f9;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+            --radius-sm: 6px;
+            --radius: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 20px;
+            --radius-full: 9999px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ========== HEADER ========== */
+        .app-header {
+            background: linear-gradient(135deg, #0b3d7b 0%, #0a5ca0 30%, #0a6fb5 60%, #0082c8 100%);
+            color: #fff;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            gap: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+
+        .logo-text h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            line-height: 1.1;
+        }
+        .logo-text .tagline {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ========== BUTTONS ========== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 18px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: var(--transition);
+            white-space: nowrap;
+            letter-spacing: 0.01em;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: #fff;
+            color: #0a5ca0;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover {
+            background: #f0f7ff;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-success:hover {
+            background: #0f766e;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .btn-accent {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-accent:hover {
+            background: var(--accent-dark);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: #fff;
+            color: var(--text);
+            border: 1.5px solid var(--border);
+        }
+        .btn-outline:hover {
+            border-color: #cbd5e1;
+            background: var(--surface-alt);
+        }
+        .btn-danger {
+            background: #fff;
+            color: var(--danger);
+            border: 1.5px solid #fecaca;
+        }
+        .btn-danger:hover {
+            background: var(--danger-light);
+            border-color: #fca5a5;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            border-radius: var(--radius-sm);
+            gap: 4px;
+        }
+        .btn-xs {
+            padding: 4px 9px;
+            font-size: 0.7rem;
+            border-radius: 4px;
+            gap: 3px;
+        }
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            justify-content: center;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ========== MAIN LAYOUT ========== */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 28px;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1100px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                padding: 16px;
+            }
+            .header-inner {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+            }
+            .header-actions {
+                gap: 6px;
+            }
+            .btn {
+                padding: 8px 12px;
+                font-size: 0.78rem;
+                gap: 4px;
+            }
+        }
+
+        /* ========== CARD ========== */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-light);
+            transition: var(--transition);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1.5px solid var(--border-light);
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.2px;
+        }
+        .card-title .icon {
+            font-size: 1.3rem;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: var(--radius-full);
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+        .badge-info {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        /* ========== FORM ========== */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .form-grid .full-width {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 480px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 10px 13px;
+            font-size: 0.9rem;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface-alt);
+            color: var(--text);
+            transition: var(--transition);
+            font-family: inherit;
+            width: 100%;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+            background: #fff;
+        }
+        .form-group input[readonly] {
+            background: #f8fafc;
+            color: var(--text-muted);
+            cursor: default;
+            font-weight: 600;
+            font-family: var(--font-mono);
+        }
+        .form-group .input-with-prefix {
+            position: relative;
+        }
+        .form-group .prefix {
+            position: absolute;
+            left: 13px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .form-group .input-with-prefix input {
+            padding-left: 32px;
+        }
+
+        .highlight-input {
+            border-color: #f59e0b !important;
+            background: #fffbeb !important;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0%,
+            100% {
+                border-color: #f59e0b;
+            }
+            50% {
+                border-color: #fbbf24;
+            }
+        }
+
+        .hotel-indicator {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--warning-light);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #92400e;
+            margin-top: 2px;
+        }
+        .hotel-indicator.active {
+            display: flex;
+        }
+
+        /* ========== DASHBOARD CARDS ========== */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        @media (max-width: 600px) {
+            .dashboard-row {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+        }
+        .dash-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1.5px solid var(--border-light);
+            transition: var(--transition);
+        }
+        .dash-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .dash-card .dash-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--primary);
+            font-family: var(--font-mono);
+        }
+        .dash-card .dash-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .dash-card.accent .dash-value {
+            color: var(--accent);
+        }
+        .dash-card.success .dash-value {
+            color: var(--success);
+        }
+
+        /* ========== TABLE ========== */
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-light);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            background: #fff;
+            min-width: 950px;
+        }
+        table thead {
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+        }
+        table thead th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: var(--text-secondary);
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+            background: #f8fafc;
+        }
+        table tbody td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+        table tbody tr {
+            transition: var(--transition);
+        }
+        table tbody tr:hover {
+            background: #f8faff;
+        }
+        table tbody tr.row-hotel {
+            background: #fffdf5;
+            border-left: 3px solid #f59e0b;
+        }
+        table tbody tr.row-hotel:hover {
+            background: #fffbe6;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .text-mono {
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+        .text-success {
+            color: var(--success);
+            font-weight: 700;
+        }
+        .text-discount {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* ========== TOAST ========== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.5s forwards;
+            max-width: 380px;
+        }
+        .toast-success {
+            background: #059669;
+        }
+        .toast-error {
+            background: #dc2626;
+        }
+        .toast-info {
+            background: #2563eb;
+        }
+        @keyframes slideInRight {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        /* ========== MODAL ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            width: 90%;
+            max-width: 550px;
+            box-shadow: var(--shadow-xl);
+            animation: scaleIn 0.25s ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h3 {
+            font-size: 1.15rem;
+            margin-bottom: 16px;
+            color: var(--text);
+            letter-spacing: -0.3px;
+        }
+        .modal .customer-list {
+            list-style: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .modal .customer-list li {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            border: 1px solid transparent;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal .customer-list li:hover {
+            background: var(--primary-light);
+            border-color: #bfdbfe;
+        }
+        .modal .customer-list li .cust-name {
+            font-weight: 600;
+        }
+        .modal .customer-list li .cust-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ========== EMPTY STATE ========== */
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+        }
+        .empty-state .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+        .empty-state p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        /* ========== SCROLLBAR ========== */
+        ::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* ========== PRINT ========== */
+        @media print {
+            body {
+                background: #fff;
+            }
+            .app-header,
+            .btn,
+            .form-panel,
+            .dashboard-row,
+            .toast-container,
+            .modal-overlay,
+            .action-btns {
+                display: none !important;
+            }
+            .main-container {
+                display: block;
+                padding: 0;
+            }
+            .card {
+                box-shadow: none;
+                border: none;
+                padding: 10px;
+            }
+            table {
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="app-header">
+        <div class="header-inner">
+            <div class="logo-section">
+                <div class="logo-icon">🧺</div>
+                <div class="logo-text">
+                    <h1>SMARTLAUNDRY-JABRIX</h1>
+                    <span class="tagline">Sistem Kasir Profesional</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="exportToExcel()" title="Ekspor Laporan Excel">
+                    📊 Ekspor Excel
+                </button>
+                <button class="btn btn-accent" onclick="openPdfModal()" title="Cetak Nota PDF per Customer">
+                    🧾 Cetak Nota PDF
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="resetAllData()" title="Hapus Semua Data">
+                    🗑️ Reset Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="main-container">
+
+        <!-- PANEL KIRI: FORM INPUT -->
+        <div class="form-panel">
+            <div class="card" style="position: sticky; top: 100px;">
+                <div class="card-header">
+                    <span class="card-title"><span class="icon">📝</span> Input Transaksi</span>
+                    <span class="badge badge-info" id="editBadge" style="display:none;">Mode Edit</span>
+                </div>
+                <form id="transactionForm" onsubmit="handleSubmit(event)">
+                    <div class="form-grid">
+                        <!-- No (Auto) -->
+                        <div class="form-group">
+                            <label>No. Transaksi</label>
+                            <input type="text" id="noTransaksi" readonly placeholder="Auto-generated">
+                        </div>
+
+                        <!-- Tanggal -->
+                        <div class="form-group">
+                            <label>Tanggal</label>
+                            <input type="date" id="tanggal" required>
+                        </div>
+
+                        <!-- Nama Customer -->
+                        <div class="form-group full-width">
+                            <label>Nama Customer</label>
+                            <input type="text" id="customer" placeholder="Masukkan nama customer..." required
+                            oninput="detectHotel()">
+                            <div class="hotel-indicator" id="hotelIndicator">
+                                🏨 Terdeteksi sebagai <strong>Hotel</strong> — Diskon Rp1.000/unit otomatis!
+                            </div>
+                        </div>
+
+                        <!-- Metode -->
+                        <div class="form-group">
+                            <label>Metode Pembayaran</label>
+                            <select id="metode" required>
+                                <option value="Kasir">Kasir</option>
+                                <option value="Tunai">Tunai</option>
+                            </select>
+                        </div>
+
+                        <!-- Keterangan Layanan -->
+                        <div class="form-group">
+                            <label>Keterangan Layanan</label>
+                            <select id="layanan" required onchange="onLayananChange()">
+                                <option value="">-- Pilih Layanan --</option>
+                                <option value="Kiloan">Kiloan — Rp7.000</option>
+                                <option value="Express">Express — Rp9.000</option>
+                                <option value="Sprei Single">Sprei Single — Rp12.000</option>
+                                <option value="Sprei Set Double">Sprei Set Double — Rp15.000</option>
+                                <option value="Selimut Kecil">Selimut Kecil — Rp15.000</option>
+                                <option value="Selimut Tebal">Selimut Tebal — Rp20.000</option>
+                                <option value="BC Sedang">BC Sedang — Rp18.000</option>
+                                <option value="BC Besar">BC Besar — Rp20.000</option>
+                                <option value="BC Extra">BC Extra — Rp25.000</option>
+                                <option value="Mukena / Sejadah">Mukena / Sejadah — Rp8.000</option>
+                                <option value="Setrika">Setrika — Rp6.000</option>
+                                <option value="Lainnya">Lainnya (Harga Manual)</option>
+                            </select>
+                        </div>
+
+                        <!-- Harga -->
+                        <div class="form-group">
+                            <label>Harga per Unit (Rp)</label>
+                            <input type="number" id="harga" placeholder="Harga otomatis..."
+                            value="" min="0" oninput="calculatePreview()">
+                        </div>
+
+                        <!-- Qty -->
+                        <div class="form-group">
+                            <label>Quantity (Qty)</label>
+                            <input type="number" id="qty" placeholder="Jumlah..." value="1" min="1" required
+                            oninput="calculatePreview()">
+                        </div>
+
+                        <!-- Satuan -->
+                        <div class="form-group">
+                            <label>Satuan</label>
+                            <select id="satuan" required onchange="calculatePreview()">
+                                <option value="Kg">Kg</option>
+                                <option value="Set">Set</option>
+                                <option value="Pcs">Pcs</option>
+                            </select>
+                        </div>
+
+                        <!-- Diskon (Auto) -->
+                        <div class="form-group">
+                            <label>Diskon per Unit (Rp)</label>
+                            <input type="number" id="diskonPerUnit" value="0" min="0" readonly
+                            style="background:#fefce8; font-weight:700; color:#b45309;">
+                        </div>
+
+                        <!-- Total Diskon -->
+                        <div class="form-group">
+                            <label>Total Diskon (Rp)</label>
+                            <input type="text" id="totalDiskon" value="0" readonly>
+                        </div>
+
+                        <!-- Preview Total -->
+                        <div class="form-group full-width">
+                            <label>💰 Total Harga (Rp)</label>
+                            <input type="text" id="previewTotal" value="0" readonly
+                            style="font-size:1.1rem; font-weight:800; color:#059669; background:#ecfdf5; border-color:#a7f3d0;">
+                        </div>
+                    </div>
+
+                    <!-- Hidden field untuk edit -->
+                    <input type="hidden" id="editIndex" value="-1">
+
+                    <div style="display:flex; gap:10px; margin-top:16px;">
+                        <button type="submit" class="btn btn-success" style="flex:1;" id="btnSubmit">
+                            ➕ Tambah Transaksi
+                        </button>
+                        <button type="button" class="btn btn-outline" style="flex:1;" id="btnCancelEdit"
+                        onclick="cancelEdit()" disabled>
+                            ❌ Batal Edit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PANEL KANAN: TABEL & DASHBOARD -->
+        <div>
+            <!-- Dashboard Summary -->
+            <div class="dashboard-row">
+                <div class="dash-card">
+                    <div class="dash-value" id="dashTotalKg">0</div>
+                    <div class="dash-label">⚖️ Total Kg</div>
+                </div>
+                <div class="dash-card accent">
+                    <div class="dash-value" id="dashTotalPcs">0</div>
+                    <div class="dash-label">📦 Total Pcs</div>
+                </div>
+                <div class="dash-card success">
+                    <div class="dash-value" id="dashTotalSet">0</div>
+                    <div class="dash-label">🛏️ Total Set</div>
+                </div>
+            </div>
+
+            <!-- Tabel Transaksi -->
+            <div class="card" style="padding: 16px 20px;">
+                <div class="card-header">
+                    <span class="card-title"><span class="icon">📋</span> Daftar Transaksi</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);" id="rowCount">0 item</span>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal</th>
+                                <th>Customer</th>
+                                <th>Metode</th>
+                                <th>Layanan</th>
+                                <th>Qty</th>
+                                <th>Satuan</th>
+                                <th>Harga/Unit</th>
+                                <th>Diskon</th>
+                                <th>Total</th>
+                                <th class="text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr class="no-data">
+                                <td colspan="11">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">📭</div>
+                                        <p>Belum ada transaksi. Silakan tambahkan melalui form di samping.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL CETAK PDF ==================== -->
+    <div class="modal-overlay" id="pdfModal" style="display:none;" onclick="closePdfModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <h3>🧾 Pilih Customer untuk Nota PDF</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+                Semua transaksi customer yang dipilih akan digabung dalam satu nota.
+            </p>
+            <ul class="customer-list" id="customerList"></ul>
+            <div style="text-align:right; margin-top:14px;">
+                <button class="btn btn-outline btn-sm" onclick="closePdfModalDirect()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TOAST CONTAINER ==================== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        (function() {
+            // ==================== DATA STORE ====================
+            const STORAGE_KEY = 'smartlaundry_jabrix_transactions';
+            const STORAGE_KEY_LASTNO = 'smartlaundry_jabrix_lastNo';
+
+            let transactions = [];
+            let lastNo = 0;
+
+            // ==================== LAYANAN CONFIG ====================
+            const layananConfig = {
+                'Kiloan': { price: 7000, defaultSatuan: 'Kg' },
+                'Express': { price: 9000, defaultSatuan: 'Kg' },
+                'Sprei Single': { price: 12000, defaultSatuan: 'Set' },
+                'Sprei Set Double': { price: 15000, defaultSatuan: 'Set' },
+                'Selimut Kecil': { price: 15000, defaultSatuan: 'Pcs' },
+                'Selimut Tebal': { price: 20000, defaultSatuan: 'Pcs' },
+                'BC Sedang': { price: 18000, defaultSatuan: 'Set' },
+                'BC Besar': { price: 20000, defaultSatuan: 'Set' },
+                'BC Extra': { price: 25000, defaultSatuan: 'Set' },
+                'Mukena / Sejadah': { price: 8000, defaultSatuan: 'Pcs' },
+                'Setrika': { price: 6000, defaultSatuan: 'Kg' },
+                'Lainnya': { price: 0, defaultSatuan: 'Pcs' }
+            };
+
+            // ==================== DOM REFS ====================
+            const $noTransaksi = document.getElementById('noTransaksi');
+            const $tanggal = document.getElementById('tanggal');
+            const $customer = document.getElementById('customer');
+            const $metode = document.getElementById('metode');
+            const $layanan = document.getElementById('layanan');
+            const $harga = document.getElementById('harga');
+            const $qty = document.getElementById('qty');
+            const $satuan = document.getElementById('satuan');
+            const $diskonPerUnit = document.getElementById('diskonPerUnit');
+            const $totalDiskon = document.getElementById('totalDiskon');
+            const $previewTotal = document.getElementById('previewTotal');
+            const $editIndex = document.getElementById('editIndex');
+            const $editBadge = document.getElementById('editBadge');
+            const $btnSubmit = document.getElementById('btnSubmit');
+            const $btnCancelEdit = document.getElementById('btnCancelEdit');
+            const $hotelIndicator = document.getElementById('hotelIndicator');
+            const $tableBody = document.getElementById('tableBody');
+            const $rowCount = document.getElementById('rowCount');
+            const $dashTotalKg = document.getElementById('dashTotalKg');
+            const $dashTotalPcs = document.getElementById('dashTotalPcs');
+            const $dashTotalSet = document.getElementById('dashTotalSet');
+            const $pdfModal = document.getElementById('pdfModal');
+            const $customerList = document.getElementById('customerList');
+            const $toastContainer = document.getElementById('toastContainer');
+
+            // ==================== INIT ====================
+            function loadData() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    transactions = raw ? JSON.parse(raw) : [];
+                    lastNo = parseInt(localStorage.getItem(STORAGE_KEY_LASTNO) || '0', 10);
+                    if (transactions.length > 0 && lastNo === 0) {
+                        lastNo = Math.max(...transactions.map(t => t.no), 0);
+                    }
+                } catch (e) {
+                    transactions = [];
+                    lastNo = 0;
+                }
+            }
+
+            function saveData() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+                localStorage.setItem(STORAGE_KEY_LASTNO, String(lastNo));
+            }
+
+            function getNextNo() {
+                lastNo++;
+                saveData();
+                return lastNo;
+            }
+
+            function formatCurrency(amount) {
+                return 'Rp ' + Number(amount).toLocaleString('id-ID');
+            }
+
+            function formatDate(dateStr) {
+                if (!dateStr) return '-';
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    return parts[2] + '/' + parts[1] + '/' + parts[0];
+                }
+                return dateStr;
+            }
+
+            function formatDateLong(dateStr) {
+                if (!dateStr) return '-';
+                const d = new Date(dateStr);
+                const bulan = [
+                    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ];
+                return d.getDate() + ' ' + bulan[d.getMonth()] + ' ' + d.getFullYear();
+            }
+
+            // ==================== TOAST ====================
+            function showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = 'toast toast-' + type;
+                toast.textContent = message;
+                $toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 3000);
+            }
+
+            // ==================== HOTEL DETECTION ====================
+            function isHotelCustomer(name) {
+                return name && name.toLowerCase().includes('hotel');
+            }
+
+            function detectHotel() {
+                const name = $customer.value.trim();
+                if (isHotelCustomer(name)) {
+                    $hotelIndicator.classList.add('active');
+                    $diskonPerUnit.value = 1000;
+                    $customer.classList.add('highlight-input');
+                } else {
+                    $hotelIndicator.classList.remove('active');
+                    $diskonPerUnit.value = 0;
+                    $customer.classList.remove('highlight-input');
+                }
+                calculatePreview();
+            }
+
+            // ==================== LAYANAN CHANGE ====================
+            function onLayananChange() {
+                const layanan = $layanan.value;
+                if (layanan && layananConfig[layanan]) {
+                    const config = layananConfig[layanan];
+                    $harga.value = config.price;
+                    $satuan.value = config.defaultSatuan;
+                    if (layanan === 'Lainnya') {
+                        $harga.value = 0;
+                        $harga.removeAttribute('readonly');
+                        $harga.placeholder = 'Input harga manual...';
+                        $harga.focus();
+                    } else {
+                        $harga.setAttribute('readonly', true);
+                        $harga.placeholder = 'Harga otomatis...';
+                    }
+                } else {
+                    $harga.value = '';
+                    $harga.removeAttribute('readonly');
+                    $harga.placeholder = 'Pilih layanan dulu...';
+                }
+                detectHotel();
+                calculatePreview();
+            }
+
+            // ==================== CALCULATE PREVIEW ====================
+            function calculatePreview() {
+                const harga = parseFloat($harga.value) || 0;
+                const qty = parseInt($qty.value) || 0;
+                const diskonPerUnitVal = parseInt($diskonPerUnit.value) || 0;
+                const totalDiskonVal = diskonPerUnitVal * qty;
+                const total = (harga * qty) - totalDiskonVal;
+
+                $totalDiskon.value = formatCurrency(totalDiskonVal);
+                $previewTotal.value = formatCurrency(total > 0 ? total : 0);
+            }
+
+            // ==================== HANDLE SUBMIT ====================
+            function handleSubmit(event) {
+                event.preventDefault();
+
+                const layanan = $layanan.value;
+                const harga = parseFloat($harga.value) || 0;
+                const qty = parseInt($qty.value) || 0;
+                const diskonPerUnitVal = parseInt($diskonPerUnit.value) || 0;
+                const totalDiskonVal = diskonPerUnitVal * qty;
+                const total = (harga * qty) - totalDiskonVal;
+                const editIdx = parseInt($editIndex.value);
+
+                if (!layanan) {
+                    showToast('⚠️ Silakan pilih layanan terlebih dahulu.', 'error');
+                    return;
+                }
+                if (harga <= 0 && layanan !== 'Lainnya') {
+                    showToast('⚠️ Harga tidak valid untuk layanan ini.', 'error');
+                    return;
+                }
+                if (qty <= 0) {
+                    showToast('⚠️ Quantity harus lebih dari 0.', 'error');
+                    return;
+                }
+                if (!$customer.value.trim()) {
+                    showToast('⚠️ Nama customer harus diisi.', 'error');
+                    return;
+                }
+                if (!$tanggal.value) {
+                    showToast('⚠️ Tanggal harus diisi.', 'error');
+                    return;
+                }
+                if (total < 0) {
+                    showToast('⚠️ Total tidak boleh negatif.', 'error');
+                    return;
+                }
+
+                const transaction = {
+                    no: editIdx >= 0 ? transactions[editIdx].no : getNextNo(),
+                    tanggal: $tanggal.value,
+                    customer: $customer.value.trim(),
+                    metode: $metode.value,
+                    layanan: layanan,
+                    qty: qty,
+                    satuan: $satuan.value,
+                    harga: harga,
+                    diskonPerUnit: diskonPerUnitVal,
+                    totalDiskon: totalDiskonVal,
+                    total: total,
+                    isHotel: isHotelCustomer($customer.value.trim())
+                };
+
+                if (editIdx >= 0) {
+                    transactions[editIdx] = transaction;
+                    showToast('✅ Transaksi berhasil diperbarui!', 'success');
+                    cancelEdit();
+                } else {
+                    transactions.push(transaction);
+                    showToast('✅ Transaksi berhasil ditambahkan!', 'success');
+                }
+
+                saveData();
+                resetForm();
+                renderAll();
+            }
+
+            // ==================== RESET FORM ====================
+            function resetForm() {
+                $noTransaksi.value = '';
+                $tanggal.value = new Date().toISOString().split('T')[0];
+                $customer.value = '';
+                $metode.value = 'Kasir';
+                $layanan.value = '';
+                $harga.value = '';
+                $harga.setAttribute('readonly', true);
+                $harga.placeholder = 'Harga otomatis...';
+                $qty.value = 1;
+                $satuan.value = 'Kg';
+                $diskonPerUnit.value = 0;
+                $totalDiskon.value = '0';
+                $previewTotal.value = '0';
+                $editIndex.value = '-1';
+                $editBadge.style.display = 'none';
+                $btnSubmit.textContent = '➕ Tambah Transaksi';
+                $btnCancelEdit.disabled = true;
+                $hotelIndicator.classList.remove('active');
+                $customer.classList.remove('highlight-input');
+                $noTransaksi.placeholder = 'Auto-generated';
+            }
+
+            function cancelEdit() {
+                resetForm();
+                showToast('ℹ️ Mode edit dibatalkan.', 'info');
+            }
+
+            // ==================== EDIT TRANSACTION ====================
+            function editTransaction(index) {
+                const t = transactions[index];
+                $editIndex.value = index;
+                $noTransaksi.value = t.no;
+                $tanggal.value = t.tanggal;
+                $customer.value = t.customer;
+                $metode.value = t.metode;
+                $layanan.value = t.layanan;
+                $harga.value = t.harga;
+                $qty.value = t.qty;
+                $satuan.value = t.satuan;
+                $diskonPerUnit.value = t.diskonPerUnit;
+                $totalDiskon.value = formatCurrency(t.totalDiskon);
+                $previewTotal.value = formatCurrency(t.total);
+
+                if (t.layanan === 'Lainnya') {
+                    $harga.removeAttribute('readonly');
+                } else {
+                    $harga.setAttribute('readonly', true);
+                }
+
+                detectHotel();
+                $editBadge.style.display = 'inline-block';
+                $btnSubmit.textContent = '💾 Simpan Perubahan';
+                $btnCancelEdit.disabled = false;
+                $noTransaksi.placeholder = 'No. ' + t.no;
+
+                // Scroll ke form
+                document.querySelector('.form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                showToast('📝 Silakan edit transaksi No. ' + t.no, 'info');
+            }
+
+            // ==================== DELETE TRANSACTION ====================
+            function deleteTransaction(index) {
+                const t = transactions[index];
+                if (confirm('⚠️ Yakin ingin menghapus transaksi No. ' + t.no + '?\n\nCustomer: ' + t.customer +
+                        '\nLayanan: ' + t.layanan + '\nTotal: ' + formatCurrency(t.total) +
+                        '\n\nData yang dihapus tidak dapat dikembalikan.')) {
+                    transactions.splice(index, 1);
+                    saveData();
+                    if (parseInt($editIndex.value) === index) {
+                        cancelEdit();
+                    }
+                    if (parseInt($editIndex.value) > index) {
+                        $editIndex.value = String(parseInt($editIndex.value) - 1);
+                    }
+                    renderAll();
+                    showToast('🗑️ Transaksi berhasil dihapus.', 'info');
+                }
+            }
+
+            // ==================== RENDER TABLE ====================
+            function renderAll() {
+                renderTable();
+                renderDashboard();
+            }
+
+            function renderTable() {
+                if (transactions.length === 0) {
+                    $tableBody.innerHTML = `
+                        <tr class="no-data">
+                            <td colspan="11">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📭</div>
+                                    <p>Belum ada transaksi. Silakan tambahkan melalui form di samping.</p>
+                                </div>
+                            </td>
+                        </tr>`;
+                    $rowCount.textContent = '0 item';
+                    return;
+                }
+
+                // Sort by no ascending
+                const sorted = [...transactions].sort((a, b) => a.no - b.no);
+
+                $tableBody.innerHTML = sorted.map((t, idx) => {
+                    const originalIndex = transactions.indexOf(t);
+                    const rowClass = t.isHotel ? 'row-hotel' : '';
+                    return `
+                        <tr class="${rowClass}">
+                            <td><strong>#${t.no}</strong></td>
+                            <td>${formatDate(t.tanggal)}</td>
+                            <td>${escapeHTML(t.customer)}${t.isHotel ? ' 🏨' : ''}</td>
+                            <td>${t.metode}</td>
+                            <td>${t.layanan}</td>
+                            <td class="text-center">${t.qty}</td>
+                            <td class="text-center">${t.satuan}</td>
+                            <td class="text-right text-mono">${formatCurrency(t.harga)}</td>
+                            <td class="text-right text-discount">${t.totalDiskon > 0 ? '- ' + formatCurrency(t.totalDiskon) : 'Rp 0'}</td>
+                            <td class="text-right text-mono text-success">${formatCurrency(t.total)}</td>
+                            <td class="text-center action-btns">
+                                <button class="btn btn-outline btn-xs" onclick="editTransaction(${originalIndex})" title="Edit">✏️</button>
+                                <button class="btn btn-danger btn-xs" onclick="deleteTransaction(${originalIndex})" title="Hapus">🗑️</button>
+                            </td>
+                        </tr>`;
+                }).join('');
+
+                $rowCount.textContent = transactions.length + ' item';
+            }
+
+            function renderDashboard() {
+                let totalKg = 0;
+                let totalPcs = 0;
+                let totalSet = 0;
+
+                transactions.forEach(t => {
+                    const satuanLower = t.satuan.toLowerCase();
+                    if (satuanLower === 'kg') totalKg += t.qty;
+                    else if (satuanLower === 'pcs') totalPcs += t.qty;
+                    else if (satuanLower === 'set') totalSet += t.qty;
+                });
+
+                $dashTotalKg.textContent = totalKg;
+                $dashTotalPcs.textContent = totalPcs;
+                $dashTotalSet.textContent = totalSet;
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ==================== EXPORT EXCEL ====================
+            function exportToExcel() {
+                if (transactions.length === 0) {
+                    showToast('⚠️ Tidak ada data untuk diekspor.', 'error');
+                    return;
+                }
+
+                const sorted = [...transactions].sort((a, b) => a.no - b.no);
+
+                // Build worksheet data
+                const wsData = [
+                    ['SMARTLAUNDRY-JABRIX - LAPORAN TRANSAKSI'],
+                    ['Tanggal Cetak: ' + formatDateLong(new Date().toISOString().split('T')[0])],
+                    [''],
+                    ['No', 'Tanggal', 'Customer', 'Metode', 'Layanan', 'Qty', 'Satuan', 'Harga/Unit (Rp)',
+                        'Diskon (Rp)', 'Total (Rp)'
+                    ],
+                ];
+
+                let grandTotal = 0;
+                let grandDiskon = 0;
+
+                sorted.forEach(t => {
+                    wsData.push([
+                        t.no,
+                        formatDate(t.tanggal),
+                        t.customer,
+                        t.metode,
+                        t.layanan,
+                        t.qty,
+                        t.satuan,
+                        t.harga,
+                        t.totalDiskon,
+                        t.total
+                    ]);
+                    grandTotal += t.total;
+                    grandDiskon += t.totalDiskon;
+                });
+
+                // Summary rows
+                wsData.push(['']);
+                wsData.push(['', '', '', '', '', '', '', '', 'TOTAL PENDAPATAN KOTOR:', grandTotal]);
+                wsData.push(['', '', '', '', '', '', '', '', 'Total Diskon Diberikan:', grandDiskon]);
+                wsData.push(['']);
+                wsData.push(['', '', '', '', '', '', '', '', 'PEMBAGIAN KEUNTUNGAN:']);
+                const kasirShare = Math.round(grandTotal * 0.12);
+                const smartlaundryShare = grandTotal - kasirShare;
+                wsData.push(['', '', '', '', '', '', '', '', '12% untuk Kasir:', kasirShare]);
+                wsData.push(['', '', '', '', '', '', '', '', 'Sisa untuk SmartLaundry (88%):', smartlaundryShare]);
+                wsData.push(['']);
+                wsData.push(['', '', '', '', '', '', '', '', 'Total Transaksi:', transactions.length + ' item']);
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+                // Column widths
+                ws['!cols'] = [
+                    { wch: 6 }, { wch: 12 }, { wch: 22 }, { wch: 10 }, { wch: 20 },
+                    { wch: 6 }, { wch: 7 }, { wch: 16 }, { wch: 14 }, { wch: 16 }
+                ];
+
+                // Merge header
+                ws['!merges'] = [
+                    { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+                    { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+                ];
+
+                XLSX.utils.book_append_sheet(wb, ws, 'Laporan Transaksi');
+
+                // Generate filename with date
+                const today = new Date();
+                const filename =
+                    `SmartLaundry-Jabrix_Laporan_${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}.xlsx`;
+
+                XLSX.writeFile(wb, filename);
+                showToast('📊 Laporan Excel berhasil diekspor!', 'success');
+            }
+
+            // ==================== PDF MODAL ====================
+            function openPdfModal() {
+                if (transactions.length === 0) {
+                    showToast('⚠️ Tidak ada transaksi untuk dicetak.', 'error');
+                    return;
+                }
+
+                // Get unique customers
+                const customerMap = {};
+                transactions.forEach(t => {
+                    const key = t.customer.trim();
+                    if (!customerMap[key]) {
+                        customerMap[key] = [];
+                    }
+                    customerMap[key].push(t);
+                });
+
+                const customers = Object.keys(customerMap).sort();
+
+                $customerList.innerHTML = customers.map(cust => {
+                    const count = customerMap[cust].length;
+                    const totalCust = customerMap[cust].reduce((sum, t) => sum + t.total, 0);
+                    return `
+                        <li onclick="printPdfForCustomer('${escapeHTML(cust).replace(/'/g, "\\'")}')">
+                            <span>
+                                <span class="cust-name">👤 ${escapeHTML(cust)}</span>
+                                ${customerMap[cust][0].isHotel ? ' 🏨' : ''}
+                            </span>
+                            <span style="display:flex; gap:8px; align-items:center;">
+                                <span class="cust-count">${count} transaksi</span>
+                                <span style="font-weight:700; color:#059669; font-size:0.85rem;">${formatCurrency(totalCust)}</span>
+                            </span>
+                        </li>`;
+                }).join('');
+
+                $pdfModal.style.display = 'flex';
+            }
+
+            function closePdfModal(event) {
+                if (event.target === $pdfModal) {
+                    $pdfModal.style.display = 'none';
+                }
+            }
+
+            function closePdfModalDirect() {
+                $pdfModal.style.display = 'none';
+            }
+
+            // ==================== PRINT PDF PER CUSTOMER ====================
+            function printPdfForCustomer(customerName) {
+                $pdfModal.style.display = 'none';
+
+                // Filter transactions for this customer
+                const customerTrans = transactions
+                    .filter(t => t.customer.trim() === customerName.trim())
+                    .sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
+
+                if (customerTrans.length === 0) {
+                    showToast('⚠️ Tidak ada transaksi untuk customer ini.', 'error');
+                    return;
+                }
+
+                // Calculate total
+                const totalBayar = customerTrans.reduce((sum, t) => sum + t.total, 0);
+
+                // Generate PDF using jsPDF
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+
+                const pageWidth = doc.internal.pageSize.getWidth();
+                const margin = 15;
+
+                // ===== HEADER =====
+                doc.setFillColor(11, 61, 123);
+                doc.rect(0, 0, pageWidth, 38, 'F');
+
+                // Logo text
+                doc.setTextColor(255, 255, 255);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(20);
+                doc.text('SMARTLAUNDRY', pageWidth / 2, 16, { align: 'center' });
+
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'normal');
+                doc.text('JABRIX - Sistem Kasir Laundry Profesional', pageWidth / 2, 24, { align: 'center' });
+
+                doc.setFontSize(7);
+                doc.text('NOTA TRANSAKSI CUSTOMER', pageWidth / 2, 31, { align: 'center' });
+
+                // ===== INFO =====
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'normal');
+                const today = new Date();
+                const tglCetak = today.getDate() + ' ' + [
+                    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ][today.getMonth()] + ' ' + today.getFullYear();
+
+                doc.text('Tanggal Cetak : ' + tglCetak, margin, 48);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(11);
+                doc.text('Customer : ' + customerName, margin, 56);
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(9);
+
+                // ===== TABLE =====
+                const tableHeaders = [
+                    ['Tgl', 'Layanan', 'Qty', 'Satuan', 'Harga/Unit', 'Subtotal']
+                ];
+                const tableRows = customerTrans.map(t => [
+                    formatDate(t.tanggal),
+                    t.layanan,
+                    String(t.qty),
+                    t.satuan,
+                    formatCurrency(t.harga),
+                    formatCurrency(t.total)
+                ]);
+
+                doc.autoTable({
+                    startY: 62,
+                    head: tableHeaders,
+                    body: tableRows,
+                    margin: { left: margin, right: margin },
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 3,
+                        halign: 'left',
+                    },
+                    headStyles: {
+                        fillColor: [241, 245, 249],
+                        textColor: [30, 41, 59],
+                        fontStyle: 'bold',
+                        fontSize: 7.5,
+                        halign: 'center',
+                    },
+                    columnStyles: {
+                        0: { halign: 'center', cellWidth: 22 },
+                        1: { halign: 'left', cellWidth: 45 },
+                        2: { halign: 'center', cellWidth: 12 },
+                        3: { halign: 'center', cellWidth: 14 },
+                        4: { halign: 'right', cellWidth: 30 },
+                        5: { halign: 'right', cellWidth: 30 },
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 250, 252]
+                    },
+                });
+
+                // ===== TOTAL =====
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setDrawColor(11, 61, 123);
+                doc.setLineWidth(1);
+                doc.line(margin, finalY - 3, pageWidth - margin, finalY - 3);
+
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(11, 61, 123);
+                doc.text('TOTAL YANG HARUS DIBAYAR', pageWidth - margin, finalY + 6, { align: 'right' });
+
+                doc.setFontSize(16);
+                doc.setTextColor(5, 150, 105);
+                doc.text(formatCurrency(totalBayar), pageWidth - margin, finalY + 16, { align: 'right' });
+
+                // ===== FOOTER =====
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(7);
+                doc.setTextColor(148, 163, 184);
+                doc.text('Terima kasih telah menggunakan layanan SmartLaundry Jabrix.', pageWidth / 2, 280, {
+                    align: 'center'
+                });
+                doc.text('Dicetak pada: ' + tglCetak + ' | SmartLaundry-Jabrix © ' + today.getFullYear(), pageWidth / 2,
+                    285, { align: 'center' });
+
+                // Save PDF
+                const safeName = customerName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+                const pdfFilename = 'Nota_SmartLaundry_' + safeName + '_' + today.getFullYear() +
+                    String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0') + '.pdf';
+                doc.save(pdfFilename);
+
+                showToast('🧾 Nota PDF untuk "' + customerName + '" berhasil dicetak!', 'success');
+            }
+
+            // ==================== RESET ALL DATA ====================
+            function resetAllData() {
+                if (transactions.length === 0) {
+                    showToast('ℹ️ Tidak ada data untuk direset.', 'info');
+                    return;
+                }
+                if (confirm(
+                        '⚠️ PERINGATAN!\n\nAnda akan menghapus SEMUA data transaksi (' + transactions.length +
+                        ' item).\n\nData yang dihapus TIDAK DAPAT dikembalikan.\n\nLanjutkan?')) {
+                    transactions = [];
+                    lastNo = 0;
+                    saveData();
+                    cancelEdit();
+                    renderAll();
+                    showToast('🗑️ Semua data berhasil direset.', 'info');
+                }
+            }
+
+            // ==================== EXPOSE GLOBAL FUNCTIONS ====================
+            window.editTransaction = editTransaction;
+            window.deleteTransaction = deleteTransaction;
+            window.printPdfForCustomer = printPdfForCustomer;
+            window.exportToExcel = exportToExcel;
+            window.openPdfModal = openPdfModal;
+            window.closePdfModal = closePdfModal;
+            window.closePdfModalDirect = closePdfModalDirect;
+            window.resetAllData = resetAllData;
+            window.handleSubmit = handleSubmit;
+            window.cancelEdit = cancelEdit;
+            window.onLayananChange = onLayananChange;
+            window.detectHotel = detectHotel;
+            window.calculatePreview = calculatePreview;
+
+            // ==================== STARTUP ====================
+            function init() {
+                loadData();
+                $tanggal.value = new Date().toISOString().split('T')[0];
+                $noTransaksi.placeholder = 'Auto-generated (next: #' + (lastNo + 1) + ')';
+                renderAll();
+                console.log('🧺 SMARTLAUNDRY-JABRIX siap digunakan!');
+                console.log('📊 Total transaksi tersimpan:', transactions.length);
+                console.log('💾 Data tersimpan di localStorage browser.');
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
